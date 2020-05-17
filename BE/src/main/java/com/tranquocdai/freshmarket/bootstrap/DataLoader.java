@@ -36,6 +36,11 @@ public class DataLoader implements CommandLineRunner {
     @Autowired
     ImagePostRepository imagePostRepository;
 
+    @Autowired
+    StatusPurchaseRepository statusPurchaseRepository;
+
+    @Autowired
+    TransportationTypeRepository transportationTypeRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -63,25 +68,46 @@ public class DataLoader implements CommandLineRunner {
         imagePostRepository.save(imagePost);
 
         //add role
-        RoleUser dn=new RoleUser();
-        dn.setRoleName("Doanh nghiệp");
-        roleResponsitory.save(dn);
+//        RoleUser dn=new RoleUser();
+//        dn.setRoleName("Doanh nghiệp");
+//        roleResponsitory.save(dn);
+//
+//        RoleUser htx=new RoleUser();
+//        htx.setRoleName("Hợp tác xã");
+//        roleResponsitory.save(htx);
+//
+//        RoleUser nd=new RoleUser();
+//        nd.setRoleName("Nông dân");
+//        roleResponsitory.save(nd);
+//
+//        RoleUser ntd=new RoleUser();
+//        ntd.setRoleName("Người tiêu dùng");
+//        roleResponsitory.save(nd);
+//
+//        RoleUser diff=new RoleUser();
+//        diff.setRoleName("khác");
+//        roleResponsitory.save(diff);
 
-        RoleUser htx=new RoleUser();
-        htx.setRoleName("Hợp tác xã");
-        roleResponsitory.save(htx);
+        RoleUser userRole=new RoleUser();
+        userRole.setRoleName("User");
+        roleResponsitory.save(userRole);
 
-        RoleUser nd=new RoleUser();
-        nd.setRoleName("Nông dân");
-        roleResponsitory.save(nd);
+        //add status purchase
+        StatusPurchase pending= new StatusPurchase();
+        pending.setStatus("Pending");
+        statusPurchaseRepository.save(pending);
 
-        RoleUser ntd=new RoleUser();
-        ntd.setRoleName("Người tiêu dùng");
-        roleResponsitory.save(nd);
+        StatusPurchase waiting= new StatusPurchase();
+        waiting.setStatus("Waiting");
+        statusPurchaseRepository.save(waiting);
 
-        RoleUser diff=new RoleUser();
-        diff.setRoleName("khác");
-        roleResponsitory.save(diff);
+        StatusPurchase done= new StatusPurchase();
+        done.setStatus("Done");
+        statusPurchaseRepository.save(done);
+
+        StatusPurchase cancel= new StatusPurchase();
+        cancel.setStatus("Cancel");
+        statusPurchaseRepository.save(cancel);
 
         //add type post
         TypePost sell= new TypePost();
@@ -91,6 +117,15 @@ public class DataLoader implements CommandLineRunner {
         TypePost buy= new TypePost();
         buy.setTypePostName("Buy");
         typePostRepository.save(buy);
+
+        //add type transportion
+        TransportationType transportationType1= new TransportationType();
+        transportationType1.setTransportationName("Trao đổi trực tiếp");
+        transportationTypeRepository.save(transportationType1);
+
+        TransportationType transportationType2= new TransportationType();
+        transportationType2.setTransportationName("Chuyển phát");
+        transportationTypeRepository.save(transportationType2);
 
         //add calculationUnit
         CalculationUnit kg=new CalculationUnit();
@@ -110,7 +145,7 @@ public class DataLoader implements CommandLineRunner {
         calculationUnitRepository.save(sp);
 
         CalculationUnit qua=new CalculationUnit();
-        qua.setUnitName("Quả");
+        qua.setUnitName("Room");
         calculationUnitRepository.save(qua);
 
         CalculationUnit cai=new CalculationUnit();
@@ -372,22 +407,22 @@ public class DataLoader implements CommandLineRunner {
 
         //add place categories
         Category category1 = new Category();
-        category1.setNameCategory("Rau,củ,quả");
+        category1.setNameCategory("Piano");
 
         Category category2 = new Category();
-        category2.setNameCategory("Thủy-Hải Sản");
+        category2.setNameCategory("Key Board");
 
         Category category3 = new Category();
-        category3.setNameCategory("Thịt các loại");
+        category3.setNameCategory("Trống");
 
         Category category4 = new Category();
-        category4.setNameCategory("Hạt,cây giống");
+        category4.setNameCategory("Nhạc Cụ Hơi");
 
         Category category5 = new Category();
-        category5.setNameCategory("Thực phẩm đóng hộp");
+        category5.setNameCategory("Nhạc Cụ Dây");
 
         Category category6 = new Category();
-        category6.setNameCategory("Gia vị thực phẩm");
+        category6.setNameCategory("EFFECT");
 
         Category category7 = new Category();
         category7.setNameCategory("Các dịch vụ khác");

@@ -33,6 +33,9 @@ public class PurchaseController {
     StatusPurchaseRepository statusPurchaseRepository;
 
     @Autowired
+    TransportationTypeRepository transportationTypeRepository;
+
+    @Autowired
     BaseService baseService;
 
     @GetMapping("/purchases")
@@ -62,6 +65,30 @@ public class PurchaseController {
                 List<Purchase> purchaseListItem = purchaseRepository.findByPost(post);
                 purchaseList.addAll(purchaseListItem);
             });
+            Collections.sort(purchaseList, new Comparator<Purchase>() {
+                @Override
+                public int compare(Purchase purchase1, Purchase purchase2) {
+                    return purchase1.getDateOfOrder().compareTo(purchase2.getDateOfOrder());
+                }
+            });
+            return new ResponseEntity(new SuccessfulResponse(purchaseList), HttpStatus.OK);
+        } catch (Exception ex) {
+            Map<String, String> errors = new HashMap<>();
+            errors.put("message", "get data not successfully");
+            return new ResponseEntity(new ErrorResponse(errors), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/purchases/buyer")
+    public ResponseEntity getPurchaseByBuyer(Authentication authentication) {
+        try {
+            if (!baseService.getUser(authentication).isPresent()) {
+                Map<String, String> errors = new HashMap<>();
+                errors.put("message", "username has not existed");
+                return new ResponseEntity(new ErrorResponse(errors), HttpStatus.BAD_REQUEST);
+            }
+            User user = baseService.getUser(authentication).get();
+            List<Purchase> purchaseList = purchaseRepository.findByBuyer(user);
             Collections.sort(purchaseList, new Comparator<Purchase>() {
                 @Override
                 public int compare(Purchase purchase1, Purchase purchase2) {
@@ -132,6 +159,7 @@ public class PurchaseController {
             purchase.setFullName(purchaseAddDTO.getFullName());
             purchase.setPhoneNumber(purchaseAddDTO.getPhoneNumber());
             purchase.setAddress(purchaseAddDTO.getAddress());
+            purchase.setTransportCost(0D);
             purchaseRepository.save(purchase);
             return new ResponseEntity(new SuccessfulResponse(purchase), HttpStatus.OK);
         } catch (Exception ex) {
@@ -150,11 +178,25 @@ public class PurchaseController {
                 return new ResponseEntity(new ErrorResponse(errors), HttpStatus.BAD_REQUEST);
             }
             Purchase purchase = purchaseRepository.findById(purchaseUpdateDTO.getPurchaseId()).get();
-            if (purchaseUpdateDTO.getPurchaseNumber() != null)
+            if (purchaseUpdateDTO.getPurchaseNumber() != null) {
                 purchase.setPurchaseNumber(purchaseUpdateDTO.getPurchaseNumber());
+            }
+            if (purchaseUpdateDTO.getAddress() != null && !"".equals(purchaseUpdateDTO.getAddress())) {
+                purchase.setAddress(purchaseUpdateDTO.getAddress());
+            }
+            if (purchaseUpdateDTO.getBuyerName() != null && !"".equals(purchaseUpdateDTO.getBuyerName())) {
+                purchase.setFullName(purchaseUpdateDTO.getBuyerName());
+            }
             if (purchaseUpdateDTO.getStatusPurchaseId() != null) {
                 StatusPurchase statusPurchase = statusPurchaseRepository.findById(purchaseUpdateDTO.getStatusPurchaseId()).get();
                 purchase.setStatusPurchase(statusPurchase);
+            }
+            if (purchaseUpdateDTO.getTransportationTypeId() != null) {
+                TransportationType transportationType = transportationTypeRepository.findById(purchaseUpdateDTO.getTransportationTypeId()).get();
+                purchase.setTransportationType(transportationType);
+            }
+            if (purchaseUpdateDTO.getTransportCost() != null && !"".equals(purchaseUpdateDTO.getTransportCost())) {
+                purchase.setTransportCost(purchaseUpdateDTO.getTransportCost());
             }
             purchaseRepository.save(purchase);
             return new ResponseEntity(new SuccessfulResponse(purchase), HttpStatus.OK);

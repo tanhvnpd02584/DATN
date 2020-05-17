@@ -26,24 +26,33 @@ export class ItemInfoComponent implements OnInit {
     checkLoadData = false;
     checkUserRate: false;
     checkUserComment: false;
+    userId = 0;
     ngOnInit() {
     }
 
     loadData() {
         this.blockUI.start();
+        if (this.localStoreManager.getToken() !== null || this.localStoreManager.getToken() === '') {
+            this.endpointFactory.postByHeader(null, 'users/information').subscribe(dataInfo => {
+                if (dataInfo.status === 'success') {
+                    this.userId = dataInfo.data.userID;
+                }
+            });
+        }
         this.endpointFactory.getEndPoint('posts/' + this.localStoreManager.getPostSelected()).subscribe(data => {
             if (data.status === 'success') {
                 const post = new PostElement();
                 const element = data.data.post;
                 post.postId = element.id;
                 post.postName = element.postName;
+                post.userId = element.user.userID;
                 post.userName = element.user.userName;
                 post.userElement = element.user;
                 post.unitPrice = element.unitPrice;
                 post.address = element.address;
                 post.dateOfPost = new Date(element.dateOfPost[0], element.dateOfPost[1], element.dateOfPost[2]);
                 post.province = element.province;
-                post.imageURL = element.imagePost.url;
+                post.imageURLs = element.imagePosts;
                 post.category = element.category;
                 if (element.description.length < 300) {
                     post.description = element.description;
@@ -54,8 +63,8 @@ export class ItemInfoComponent implements OnInit {
                 post.averageRate = Number.parseFloat(data.data.averageRate);
                 this.dataComment = data.data.userCommentDTOList;
                 this.dataContent = post;
-                this.checkLoadData = true;
                 this.blockUI.stop();
+                this.checkLoadData = true;
             }
         });
     }
@@ -68,20 +77,6 @@ export class ItemInfoComponent implements OnInit {
                 this.numberItem -= 1;
             }
         }
-    }
-
-    purchaseItem(): void {
-        const dataPurchase = [
-            this.dataContent.postId,
-            this.dataContent.postName,
-            this.dataContent.unitPrice,
-            this.numberItem,
-            this.dataContent.imageURL,
-            this.dataContent.calculationUnit.unitName,
-        ];
-        this.localStoreManager.setDataPurchase(dataPurchase.toString());
-        this.router.navigateByUrl('/component/confirm-purchase');
-
     }
 
     createComment(): void {
@@ -99,6 +94,20 @@ export class ItemInfoComponent implements OnInit {
         }
     }
 
+    purchaseItem(): void {
+        const dataPurchase = [
+            this.dataContent.postId,
+            this.dataContent.postName,
+            this.dataContent.unitPrice,
+            this.numberItem,
+            this.dataContent.imageURLs[0].url,
+            this.dataContent.calculationUnit.unitName,
+        ];
+        this.localStoreManager.setDataPurchase(dataPurchase.toString());
+        this.router.navigateByUrl('/component/confirm-purchase');
+
+    }
+
     addStorageCart(): void {
         const dataPurchase = {
             postId: this.dataContent.postId,
@@ -107,7 +116,7 @@ export class ItemInfoComponent implements OnInit {
             numberItem: this.numberItem,
             userName: this.dataContent.userName,
             province: this.dataContent.province.nameProvince,
-            imageURL: this.dataContent.imageURL,
+            imageURL: this.dataContent.imageURLs[0].url,
             address: this.dataContent.address,
             unitName: this.dataContent.calculationUnit.unitName,
         };
@@ -116,5 +125,10 @@ export class ItemInfoComponent implements OnInit {
 
     onLogin(): void {
         this.modalService.open(LoginComponent, { size: 'lg', windowClass: 'login-modal', centered: true });
+    }
+
+    viewProfileUser(): void {
+        this.localStoreManager.setUserNameSelected(this.dataContent.userName);
+        this.router.navigateByUrl('/component/profile-user');
     }
 }

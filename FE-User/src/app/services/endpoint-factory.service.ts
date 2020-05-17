@@ -35,6 +35,15 @@ export class EndpointFactory {
             })
         );
     }
+
+    public getEndPointWithResponeHeader(endpointUrl): Observable<any> {
+        return this.httpclient.get<any>(this.baseUrl + endpointUrl, { observe: 'response' }).pipe<any>(
+            catchError((error) => {
+                return this.handleError(error, () => this.getEndPointWithResponeHeader(endpointUrl));
+            })
+        );
+    }
+
     public getEndPoint<T>(endpointUrl): Observable<any> {
         return this.httpclient.get<T>(this.baseUrl + endpointUrl).pipe<T>(
             catchError((error) => {
@@ -42,6 +51,15 @@ export class EndpointFactory {
             })
         );
     }
+    public getEndPointByParam<T>(endpointUrl, params: any): Observable<any> {
+        const url: string = this.baseUrl + endpointUrl;
+        return this.httpclient.post<T>(url, params).pipe<T>(
+            catchError((error) => {
+                return this.handleError(error, () => this.getEndPointByParam(params, endpointUrl));
+            })
+        );
+    }
+
     public postByHeader<T>(params: any, suburl: string): Observable<any> {
         const url: string = this.baseUrl + suburl;
         const httpOptions = {

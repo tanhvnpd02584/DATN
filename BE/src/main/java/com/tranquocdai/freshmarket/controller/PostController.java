@@ -4,6 +4,7 @@ import com.tranquocdai.freshmarket.config.Constants;
 import com.tranquocdai.freshmarket.dto.PostDTO;
 import com.tranquocdai.freshmarket.dto.PostInfoDTO;
 import com.tranquocdai.freshmarket.dto.UserCommentDTO;
+import com.tranquocdai.freshmarket.dto.UserDTO;
 import com.tranquocdai.freshmarket.model.*;
 import com.tranquocdai.freshmarket.repository.*;
 import com.tranquocdai.freshmarket.response.ErrorResponse;
@@ -11,6 +12,9 @@ import com.tranquocdai.freshmarket.response.SuccessfulResponse;
 import com.tranquocdai.freshmarket.service.BaseService;
 import com.tranquocdai.freshmarket.service.StorageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -19,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @RestController
@@ -48,16 +53,77 @@ public class PostController {
     RatePostRepository ratePostRepository;
 
     @Autowired
+    PurchaseRepository purchaseRepository;
+
+    @Autowired
+    UserRepository userRepository;
+
+    @Autowired
     BaseService baseService;
 
     @Autowired
     StorageService storageService;
 
-    @GetMapping("/posts")
-    public ResponseEntity getAllPost() {
+    @GetMapping("/posts/{page}/getAll")
+    public ResponseEntity getAllPost(@PathVariable("page") int page) {
         try {
+            if (page < 0) {
+                List<Post> postList = postRepository.findAll();
+                return new ResponseEntity(new SuccessfulResponse(convertListPost(postList)), HttpStatus.OK);
+            }
             List<Post> postList = postRepository.findAll();
-            return new ResponseEntity(new SuccessfulResponse(convertListPost(postList)), HttpStatus.OK);
+            List<PostInfoDTO> postInfoDTOS = convertListPost(postList);
+            List<PostInfoDTO> postInfoDTOSResult = new ArrayList<>();
+            for (int i = 40 * page; i < (page + 1) * 40; i++) {
+                if (i < postInfoDTOS.size()) {
+                    postInfoDTOSResult.add(postInfoDTOS.get(i));
+                } else {
+                    break;
+                }
+            }
+            int totalPage = 0;
+            if (postInfoDTOS.size() % 40 == 0) {
+                totalPage = postInfoDTOS.size() / 40;
+            } else {
+                totalPage = postInfoDTOS.size() / 40 + 1;
+            }
+            return ResponseEntity.ok().header("totalPage", totalPage + "")
+                    .header("pageCurrent", page + "")
+                    .body(new SuccessfulResponse(postInfoDTOSResult));
+        } catch (Exception ex) {
+            Map<String, String> errors = new HashMap<>();
+            errors.put("message", "get data not successfully");
+            return new ResponseEntity(new ErrorResponse(errors), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/posts/{page}/getByUser")
+    public ResponseEntity getPostByUserId(@RequestParam String userName, @PathVariable("page") int page) {
+        try {
+            User user = userRepository.findByUserName(userName).get();
+            if (page < 0) {
+                List<Post> postList = postRepository.findByUser(user);
+                return new ResponseEntity(new SuccessfulResponse(convertListPost(postList)), HttpStatus.OK);
+            }
+            List<Post> postList = postRepository.findByUser(user);
+            List<PostInfoDTO> postInfoDTOS = convertListPost(postList);
+            List<PostInfoDTO> postInfoDTOSResult = new ArrayList<>();
+            for (int i = 40 * page; i < (page + 1) * 40; i++) {
+                if (i < postInfoDTOS.size()) {
+                    postInfoDTOSResult.add(postInfoDTOS.get(i));
+                } else {
+                    break;
+                }
+            }
+            int totalPage = 0;
+            if (postInfoDTOS.size() % 40 == 0) {
+                totalPage = postInfoDTOS.size() / 40;
+            } else {
+                totalPage = postInfoDTOS.size() / 40 + 1;
+            }
+            return ResponseEntity.ok().header("totalPage", totalPage + "")
+                    .header("pageCurrent", page + "")
+                    .body(new SuccessfulResponse(postInfoDTOSResult));
         } catch (Exception ex) {
             Map<String, String> errors = new HashMap<>();
             errors.put("message", "get data not successfully");
@@ -112,7 +178,7 @@ public class PostController {
     @GetMapping("/posts/search")
     public ResponseEntity getAllTourist(@RequestParam(value = "keySearch", defaultValue = "") String keyword) {
         try {
-            List<Post> postList = postRepository.findByPostNameContains(keyword);
+            List<Post> postList = postRepository.findByPostNameContains(keyword, PageRequest.of(0, 40, Sort.by("dateOfPost").descending()));
             return new ResponseEntity(new SuccessfulResponse(convertListPost(postList)), HttpStatus.OK);
         } catch (Exception ex) {
             Map<String, String> errors = new HashMap<>();
@@ -136,28 +202,32 @@ public class PostController {
             post.setAddress(postAddDTO.getAddress());
             post.setUnitPrice(postAddDTO.getUnitPrice());
             post.setDateOfPost(LocalDateTime.now());
-            post.setDistrictId(postAddDTO.getDistrictId());
+            //post.setDistrictId(postAddDTO.getDistrictId());
             post.setDateOfPost(LocalDateTime.now());
-            post.setWeightOfItem(postAddDTO.getWeightOfItem());
+            //post.setWeightOfItem(postAddDTO.getWeightOfItem());
             post.setDescription(postAddDTO.getDescription());
-            //TypePost typePost = typePostRepository.findById(addPostDTO.getTypePostID()).get();
-            // post.setTypePost(typePost);
             Province province = provinceRepository.findById(postAddDTO.getProvinceID()).get();
             post.setProvince(province);
             CalculationUnit calculationUnit = calculationUnitRepository.findById(postAddDTO.getCalculationUnitID()).get();
             post.setCalculationUnit(calculationUnit);
             Category category = categoryRepository.findById(postAddDTO.getCategoryID()).get();
             post.setCategory(category);
-            ImagePost imagePost = new ImagePost();
-            if (postAddDTO.getImageBase64() != null && !"".equals(postAddDTO.getImageBase64())) {
-                String newImageUrl = storageService.store(postAddDTO.getImageBase64());
-                imagePost.setUrl(newImageUrl);
-                imagePostRepository.save(imagePost);
+            if (postAddDTO.getImageBase64s() != null && postAddDTO.getImageBase64s().size() > 0) {
+                List<ImagePost> imagePosts = new ArrayList<>();
+                postAddDTO.getImageBase64s().forEach(element -> {
+                    ImagePost imagePost = new ImagePost();
+                    String newImageUrl = storageService.store(element);
+                    imagePost.setUrl(newImageUrl);
+                    imagePost.setPost(post);
+                    imagePosts.add(imagePost);
+                });
+                imagePostRepository.saveAll(imagePosts);
             } else {
-                imagePost = imagePostRepository.findById(Constants.ID_IMAGE_DEFAULT).get();
+                ImagePost imagePost = new ImagePost();
+                imagePost.setUrl(Constants.URL_POST_DEFAULT);
+                imagePost.setPost(post);
+                imagePostRepository.save(imagePost);
             }
-            post.setImagePost(imagePost);
-            postRepository.save(post);
             return new ResponseEntity(new SuccessfulResponse(post), HttpStatus.OK);
         } catch (Exception ex) {
             Map<String, String> errors = new HashMap<>();
@@ -185,9 +255,9 @@ public class PostController {
             post.setAddress(postUpdateDTO.getAddress());
             post.setUnitPrice(postUpdateDTO.getUnitPrice());
             post.setDateOfPost(LocalDateTime.now());
-            post.setDistrictId(postUpdateDTO.getDistrictId());
+            //post.setDistrictId(postUpdateDTO.getDistrictId());
             post.setDescription(postUpdateDTO.getDescription());
-            post.setWeightOfItem(postUpdateDTO.getWeightOfItem());
+            //post.setWeightOfItem(postUpdateDTO.getWeightOfItem());
             //TypePost typePost = typePostRepository.findById(addPostDTO.getTypePostID()).get();
             // post.setTypePost(typePost);
             Province province = provinceRepository.findById(postUpdateDTO.getProvinceID()).get();
@@ -196,23 +266,21 @@ public class PostController {
             post.setCalculationUnit(calculationUnit);
             Category category = categoryRepository.findById(postUpdateDTO.getCategoryID()).get();
             post.setCategory(category);
-            if (postUpdateDTO.getImageBase64() != null && !"".equals(postUpdateDTO.getImageBase64())) {
-                ImagePost imagePost = post.getImagePost();
-                if (Constants.URL_POST_DEFAULT.equals(imagePost.getUrl())) {
-                    ImagePost imagePostSave = new ImagePost();
-                    String newImageUrl = storageService.store(postUpdateDTO.getImageBase64());
-                    imagePostSave.setUrl(newImageUrl);
-                    imagePostRepository.save(imagePostSave);
-                    post.setImagePost(imagePostSave);
-                } else {
-                    storageService.delete(imagePost.getUrl());
-                    String newImageUrl = storageService.store(postUpdateDTO.getImageBase64());
-                    imagePost.setUrl(newImageUrl);
-                    imagePostRepository.save(imagePost);
-                    post.setImagePost(imagePost);
-                }
-            }
             postRepository.save(post);
+            if (postUpdateDTO.getImageBase64s() != null && postUpdateDTO.getImageBase64s().size() > 0) {
+                postUpdateDTO.getImageBase64s().forEach(element -> {
+                    ImagePost imagePost = new ImagePost();
+                    String newImageUrl = storageService.store(element);
+                    imagePost.setUrl(newImageUrl);
+                    imagePost.setPost(post);
+                    imagePostRepository.save(imagePost);
+                });
+            } else {
+                ImagePost imagePost = new ImagePost();
+                imagePost.setUrl(Constants.URL_POST_DEFAULT);
+                imagePost.setPost(post);
+                imagePostRepository.save(imagePost);
+            }
             return new ResponseEntity(new SuccessfulResponse(post), HttpStatus.OK);
         } catch (Exception ex) {
             Map<String, String> errors = new HashMap<>();
@@ -234,9 +302,9 @@ public class PostController {
             post.setAddress(postUpdateDTO.getAddress());
             post.setUnitPrice(postUpdateDTO.getUnitPrice());
             post.setDateOfPost(LocalDateTime.now());
-            post.setDistrictId(postUpdateDTO.getDistrictId());
+            //post.setDistrictId(postUpdateDTO.getDistrictId());
             post.setDescription(postUpdateDTO.getDescription());
-            post.setWeightOfItem(postUpdateDTO.getWeightOfItem());
+            //post.setWeightOfItem(postUpdateDTO.getWeightOfItem());
             //TypePost typePost = typePostRepository.findById(addPostDTO.getTypePostID()).get();
             // post.setTypePost(typePost);
             Province province = provinceRepository.findById(postUpdateDTO.getProvinceID()).get();
@@ -245,23 +313,21 @@ public class PostController {
             post.setCalculationUnit(calculationUnit);
             Category category = categoryRepository.findById(postUpdateDTO.getCategoryID()).get();
             post.setCategory(category);
-            if (postUpdateDTO.getImageBase64() != null && !"".equals(postUpdateDTO.getImageBase64())) {
-                ImagePost imagePost = post.getImagePost();
-                if (Constants.URL_POST_DEFAULT.equals(imagePost.getUrl())) {
-                    ImagePost imagePostSave = new ImagePost();
-                    String newImageUrl = storageService.store(postUpdateDTO.getImageBase64());
-                    imagePostSave.setUrl(newImageUrl);
-                    imagePostRepository.save(imagePostSave);
-                    post.setImagePost(imagePostSave);
-                } else {
-                    storageService.delete(imagePost.getUrl());
-                    String newImageUrl = storageService.store(postUpdateDTO.getImageBase64());
-                    imagePost.setUrl(newImageUrl);
-                    imagePostRepository.save(imagePost);
-                    post.setImagePost(imagePost);
-                }
-            }
             postRepository.save(post);
+            if (postUpdateDTO.getImageBase64s() != null && postUpdateDTO.getImageBase64s().size() > 0) {
+                postUpdateDTO.getImageBase64s().forEach(element -> {
+                    ImagePost imagePost = new ImagePost();
+                    String newImageUrl = storageService.store(element);
+                    imagePost.setUrl(newImageUrl);
+                    imagePost.setPost(post);
+                    imagePostRepository.save(imagePost);
+                });
+            } else {
+                ImagePost imagePost = new ImagePost();
+                imagePost.setUrl(Constants.URL_POST_DEFAULT);
+                imagePost.setPost(post);
+                imagePostRepository.save(imagePost);
+            }
             return new ResponseEntity(new SuccessfulResponse(post), HttpStatus.OK);
         } catch (Exception ex) {
             Map<String, String> errors = new HashMap<>();
@@ -294,8 +360,20 @@ public class PostController {
             post.getUser().setPassword("");
             postInfoDTO.setAverageRate(averageRate(post));
             postInfoDTO.setPost(post);
+            postInfoDTO.setScore(calculateScore(post));
             postInfoDTOList.add(postInfoDTO);
         }
+        Collections.sort(postInfoDTOList, new Comparator<PostInfoDTO>() {
+            @Override
+            public int compare(PostInfoDTO o1, PostInfoDTO o2) {
+                if (o1.getScore() > (o2.getScore())) {
+                    return -1;
+                } else if (o1.getScore() < (o2.getScore())) {
+                    return 1;
+                }
+                return 0;
+            }
+        });
         return postInfoDTOList;
     }
 
@@ -317,6 +395,7 @@ public class PostController {
         postInfoDTO.setUserCommentDTOList(userCommentDTOList);
         postInfoDTO.setPost(post);
         postInfoDTO.setAverageRate(averageRate(post));
+        postInfoDTO.setScore(calculateScore(post));
         return postInfoDTO;
     }
 
@@ -332,5 +411,31 @@ public class PostController {
             return Float.parseFloat(averageRateStr);
         }
         return 0;
+    }
+
+    private float calculateScore(Post post) {
+        List<RatePost> ratePostList = ratePostRepository.findByPost(post);
+        int s = 0;
+        if (ratePostList.size() > 0) {
+            for (RatePost element : ratePostList) {
+                s += (element.getRateNumber().intValue() - 3);
+            }
+        }
+        List<Purchase> purchasesCancel = purchaseRepository.findPurchaseCancel(post.getId());
+        //List<Purchase> purchasesNotCancel = purchaseRepository.findPurchaseNotCancel(post.getId());
+        List<Purchase> purchases = purchaseRepository.findByPost(post);
+        s += purchases.size() - 2 * purchasesCancel.size();
+        int sign = 0;
+        if (s > 0) {
+            sign = 1;
+        } else if (s < 0) {
+            sign = -1;
+        }
+        long seconds = Constants.LOCAL_DATE_TIME_START.until(post.getDateOfPost(), ChronoUnit.MINUTES);
+        int n = 1;
+        if (s >= 1) {
+            n = Math.abs(s);
+        }
+        return (float) Math.log10(n) + (float) (sign * seconds) / 45000;
     }
 }

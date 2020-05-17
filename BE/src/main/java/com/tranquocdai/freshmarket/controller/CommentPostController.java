@@ -18,10 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 public class CommentPostController {
@@ -48,6 +45,18 @@ public class CommentPostController {
             }
             Optional<Post> optionalPost = postRepository.findById(id);
             Collection<CommentPost> commentPost = commentPostRepository.findByPost(optionalPost.get());
+            return new ResponseEntity(new SuccessfulResponse(CommentPostDTO.converCommentPost(commentPost)), HttpStatus.OK);
+        } catch (Exception ex) {
+            Map<String, String> errors = new HashMap<>();
+            errors.put("message", "get data not successfully");
+            return new ResponseEntity(new ErrorResponse(errors), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/posts/getAllComment")
+    public ResponseEntity getAllComment() {
+        try {
+            Collection<CommentPost> commentPost = commentPostRepository.findAll();
             return new ResponseEntity(new SuccessfulResponse(CommentPostDTO.converCommentPost(commentPost)), HttpStatus.OK);
         } catch (Exception ex) {
             Map<String, String> errors = new HashMap<>();

@@ -25,7 +25,7 @@ export const ROUTES: RouteInfo[] = [
     },
     {
         path: '/component/list-post',
-        title: 'Rau,củ,quả',
+        title: 'Piano',
         icon: '',
         categoryId: 1,
         class: '',
@@ -36,7 +36,7 @@ export const ROUTES: RouteInfo[] = [
     },
     {
         path: '/component/list-post',
-        title: 'Thủy-Hải Sản',
+        title: 'Key Board',
         icon: '',
         categoryId: 2,
         class: '',
@@ -47,7 +47,7 @@ export const ROUTES: RouteInfo[] = [
     },
     {
         path: '/component/list-post',
-        title: 'Thịt các loại',
+        title: 'Trống',
         icon: '',
         categoryId: 3,
         class: '',
@@ -58,7 +58,7 @@ export const ROUTES: RouteInfo[] = [
     },
     {
         path: '/component/list-post',
-        title: 'Hạt,cây giống',
+        title: 'Nhạc cụ Hơi',
         icon: '',
         categoryId: 4,
         class: '',
@@ -69,7 +69,7 @@ export const ROUTES: RouteInfo[] = [
     },
     {
         path: '/component/list-post',
-        title: 'Thực phẩm đóng hộp',
+        title: 'Nhạc Cụ Dây',
         icon: '',
         categoryId: 5,
         class: '',
@@ -80,7 +80,7 @@ export const ROUTES: RouteInfo[] = [
     },
     {
         path: '/component/list-post',
-        title: 'Gia vị thực phẩm',
+        title: 'EFECT',
         icon: '',
         categoryId: 6,
         class: '',
@@ -91,7 +91,7 @@ export const ROUTES: RouteInfo[] = [
     },
     {
         path: '/component/list-post',
-        title: 'Các dịch vụ khác',
+        title: 'Applitier',
         icon: '',
         categoryId: 7,
         class: '',

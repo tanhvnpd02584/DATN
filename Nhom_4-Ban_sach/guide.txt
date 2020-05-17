@@ -1,0 +1,1 @@
+copy file "hinhanh" vào ổ đĩa C

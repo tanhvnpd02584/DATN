@@ -8,7 +8,8 @@
         <div class="row mt-2">
             <div class="col-md-5ths col-xs-6" *ngFor="let post of dataList">
                 <div class="card" style="cursor: pointer;" (click)="showInfo(post)">
-                    <img class="card-img-top img-responsive" src="{{post.imageURL}}" alt="Card image cap">
+                    <img class="card-img-top img-responsive" src="{{post.imageURLs[0].url|convertUrlImage}}"
+                        alt="Card image cap">
                     <div class="card-body">
                         <h4 class="card-title">{{post.postName}}</h4>
                         <!-- <p class="card-text">{{post.description}}</p> -->
@@ -24,12 +25,17 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col" style="margin-top: 8px;">{{post.unitPrice|convertAmount}}/1
-                                {{post.calculationUnit.unitName}}</div>
+                            <div class="col" id="stype-amount"><b>{{post.unitPrice|convertAmount}}/1
+                                    {{post.calculationUnit.unitName}}</b></div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+        <div>
+            <ngb-pagination class="d-flex justify-content-center" #numPages (click)="onChangePage(numPages.page)"
+                [(collectionSize)]="totalPage" [(page)]="page" [maxSize]="3" [rotate]="true" [ellipses]="false"
+                [boundaryLinks]="true"></ngb-pagination>
         </div>
     </div>
 </div>

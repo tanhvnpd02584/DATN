@@ -6,13 +6,14 @@ export class PostElement {
     postId: string;
     postName: string;
     userName: string;
+    userId: string;
     userElement: UserElement;
     description: string;
     unitPrice: number;
     address: string;
     dateOfPost: Date;
     province: string;
-    imageURL: string;
+    imageURLs: string;
     category: string;
     calculationUnit: string;
     averageRate: number;

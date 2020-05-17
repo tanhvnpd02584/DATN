@@ -8,6 +8,7 @@ import { PurchaseElement } from '../model/PurchaseElement.model';
 import { PurchaseInfoComponent } from './purchase-info/purchase-info.component';
 import { DialogConfirmComponent } from '../dialog-confirm/dialog-confirm.component';
 import { LocalStoreManager } from '../../services/local-store-manager.service';
+import { MatPaginator } from '@angular/material/paginator';
 
 @Component({
     selector: 'app-list-item',
@@ -21,6 +22,7 @@ export class ListItemComponent implements OnInit {
     displayedColumns: string[] = ['imageURL', 'purchaseId', 'postId', 'buyerName', 'unitPrice', 'purchaseNumber', 'dateOfOrder',
         'statusPurchaseName', 'view', 'delete'];
     @ViewChild(MatSort, { static: true }) sort: MatSort;
+    @ViewChild(MatPaginator, { static: true }) paginator: MatPaginator;
     constructor(private modalService: NgbModal, private changeDetectorRefs: ChangeDetectorRef, private endpointFactory: EndpointFactory,
         private localStoreManager: LocalStoreManager) {
         this.setUrl();
@@ -41,40 +43,52 @@ export class ListItemComponent implements OnInit {
         }
     }
     loadData() {
-
         this.endpointFactory.getEndPointByHeader(this.getUrl).subscribe(data => {
             if (data.status === 'success') {
                 const temp = [];
                 data.data.forEach((element, index) => {
-                    const post = new PurchaseElement();
-                    post.purchaseId = element.id;
-                    post.postId = element.post.id;
-                    post.buyerName = element.fullName;
-                    post.unitPrice = element.post.unitPrice;
-                    post.purchaseNumber = element.purchaseNumber;
-                    post.statusPurchaseName = element.statusPurchase.status;
-                    post.statusPurchase = element.statusPurchase;
-                    post.dateOfOrder = new Date(element.dateOfOrder[0], element.dateOfOrder[1] - 1, element.dateOfOrder[2]);
-                    post.imageURL = element.post.imagePost.url;
-                    temp.unshift(post);
+                    const purchase = new PurchaseElement();
+                    purchase.purchaseId = element.id;
+                    purchase.postId = element.post.id;
+                    purchase.post = element.post;
+                    purchase.buyerName = element.fullName;
+                    purchase.phoneNumber = element.phoneNumber;
+                    purchase.address = element.address;
+                    purchase.unitPrice = element.post.unitPrice;
+                    purchase.purchaseNumber = element.purchaseNumber;
+                    purchase.transportCost = element.transportCost;
+                    purchase.statusPurchaseName = element.statusPurchase.status;
+                    purchase.statusPurchase = element.statusPurchase;
+                    purchase.dateOfOrder = new Date(element.dateOfOrder[0], element.dateOfOrder[1] - 1, element.dateOfOrder[2]);
+                    purchase.imageURL = element.post.imagePosts[0].url;
+                    temp.unshift(purchase);
                 });
                 this.dataList = temp;
             }
         }
         );
     }
-    setDataSource() {
+
+    setDataSource(): void {
         setTimeout(() => {
             this.dataSource = new MatTableDataSource(this.dataList);
             this.dataSource.sort = this.sort;
+            this.dataSource.paginator = this.paginator;
         }, 1000);
     }
-    deleteItem(element: any) {
+
+    deleteItem(element: any): void {
         const modalRef = this.modalService.open(DialogConfirmComponent, { size: 'lg', windowClass: 'delete-modal', centered: true });
         modalRef.componentInstance.data = { title: 'Xác nhận xóa đơn hàng', content: 'Bạn muốn xóa đơn hàng đơn hàng?' };
         modalRef.componentInstance.output.subscribe((res) => {
             if (res === 'success') {
-                alert('ok');
+                const params = element.purchaseId;
+                this.endpointFactory.deleteEndPoint(params, 'purchases/' + params).subscribe(data => {
+                    if (data.status === 'success') {
+                        this.setData();
+                    }
+                }, error => {
+                });
             }
         });
     }
@@ -86,6 +100,7 @@ export class ListItemComponent implements OnInit {
             if (res === 'success') {
                 this.setData();
             }
+        }, error => {
         });
     }
 }
